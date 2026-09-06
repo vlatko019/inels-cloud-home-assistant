@@ -9,6 +9,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DEV_TYPE_THERMOSTAT, DOMAIN
@@ -46,11 +47,13 @@ class InelsCloudSensorBase(CoordinatorEntity[InelsCloudCoordinator], SensorEntit
         super().__init__(coordinator)
         self._key = key
         device = coordinator.devices[key]
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, key)},
-            "name": device["dev_name"],
-            "manufacturer": "iNELS",
-        }
+        self._attr_unique_id = f"{DOMAIN}_{key.replace(':', '_')}_{self.__class__.__name__.lower()}"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, key)},
+            name=device["dev_name"],
+            manufacturer="iNELS",
+            model=f"ELAN-RF device type {device['dev_type']}",
+        )
 
     @property
     def _state(self) -> dict[str, Any]:

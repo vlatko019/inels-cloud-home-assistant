@@ -12,6 +12,7 @@ from homeassistant.components.cover import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DEV_TYPE_SHUTTER, DOMAIN
@@ -44,7 +45,14 @@ class InelsCloudCover(CoordinatorEntity[InelsCloudCoordinator], CoverEntity):
         super().__init__(coordinator)
         self._key = key
         self._attr_unique_id = f"{DOMAIN}_{key.replace(':', '_')}"
-        self._attr_name = coordinator.devices[key]["dev_name"]
+        device = coordinator.devices[key]
+        self._attr_name = device["dev_name"]
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, key)},
+            name=device["dev_name"],
+            manufacturer="iNELS",
+            model=f"ELAN-RF device type {device['dev_type']}",
+        )
 
     @property
     def _device(self) -> dict[str, Any]:
