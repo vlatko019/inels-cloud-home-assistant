@@ -1,0 +1,78 @@
+"""The iNELS Cloud integration."""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+from aiohttp import ClientSession
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
+from .api import InelsCloudClient
+from .const import (
+    CONF_ACCESS_TOKEN,
+    CONF_REFRESH_TOKEN,
+    PLATFORMS,
+)
+from .coordinator import InelsCloudCoordinator
+from .websocket import InelsCloudWebSocket
+
+_LOGGER = logging.getLogger(__name__)
+
+
+async def _update_tokens(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    access_token: str,
+    refresh_token: str,
+) -> None:
+    """Persist rotated authentication tokens."""
+    hass.config_entries.async_update_entry(
+        entry,
+        data={
+            **entry.data,
+            CONF_ACCESS_TOKEN: access_token,
+            CONF_REFRESH_TOKEN: refresh_token,
+        },
+    )
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up iNELS Cloud from a config entry."""
+    session: ClientSession = async_get_clientsession(hass)
+
+    async def token_callback(access_token: str, refresh_token: str) -> None:
+        await _update_tokens(hass, entry, access_token, refresh_token)
+
+    api = InelsCloudClient(
+        session,
+        access_token=entry.data.get(CONF_ACCESS_TOKEN),
+        refresh_token=entry.data.get(CONF_REFRESH_TOKEN),
+        token_update_callback=token_callback,
+    )
+
+    # Force authentication and initial discovery during setup.
+    coordinator = InelsCloudCoordinator(hass, api, None)  # type: ignore[arg-type]
+    await coordinator.async_config_entry_first_refresh()
+
+    websocket = InelsCloudWebSocket(
+        session,
+        api.ensure_token,
+        coordinator.handle_event,
+    )
+    coordinator.websocket = websocket
+    await websocket.async_start()
+
+    entry.runtime_data = coordinator
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    return True
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload an iNELS Cloud config entry."""
+    coordinator: InelsCloudCoordinator = entry.runtime_data
+    await coordinator.websocket.async_stop()
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
