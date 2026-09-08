@@ -87,18 +87,20 @@ class InelsCloudCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
             self.hass.async_create_task(self.async_request_refresh())
             return
 
-        current["state"] = {
-            key: value
-            for key, value in event.items()
-            if key
-            not in {
-                "dev",
-                "eui",
-                "mac",
-                "tech",
-                "init",
-                "action",
-                "bulk",
+        current.setdefault("state", {}).update(
+            {
+                key: value
+                for key, value in event.items()
+                if key not in {
+                    "dev",
+                    "eui",
+                    "mac",
+                    "tech",
+                    "init",
+                    "action",
+                    "bulk",
+                }
             }
-        }
+        )
+        
         self.async_set_updated_data(self.devices)

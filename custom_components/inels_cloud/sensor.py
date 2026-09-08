@@ -61,7 +61,10 @@ class InelsCloudSensorBase(CoordinatorEntity[InelsCloudCoordinator], SensorEntit
 
     @property
     def available(self) -> bool:
-        return self._state.get("rssi") != "UNKNOWN"
+        # dev_type 30 can legitimately report rssi=UNKNOWN while still
+        # providing valid temperature/humidity data. Presence in the
+        # coordinator is therefore a better availability signal here.
+        return self._key in self.coordinator.devices
 
 
 class InelsCloudTemperature(InelsCloudSensorBase):
@@ -74,7 +77,7 @@ class InelsCloudTemperature(InelsCloudSensorBase):
     @property
     def native_value(self) -> float | None:
         value = self._state.get("temperature")
-        return None if value is None or value == 2550 else value / 100
+        return None if value is None else value / 100
 
 
 class InelsCloudHumidity(InelsCloudSensorBase):
