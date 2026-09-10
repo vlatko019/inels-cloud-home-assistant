@@ -39,6 +39,11 @@ async def _update_tokens(
     )
 
 
+async def _async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload the integration when options change."""
+    await hass.config_entries.async_reload(entry.entry_id)
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up iNELS Cloud from a config entry."""
     session: ClientSession = async_get_clientsession(hass)
@@ -66,6 +71,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await websocket.async_start()
 
     entry.runtime_data = coordinator
+    options_snapshot = dict(entry.options)
+
+    async def options_listener(hass: HomeAssistant, updated_entry: ConfigEntry) -> None:
+        if updated_entry.options == options_snapshot:
+            return
+        await _async_update_options(hass, updated_entry)
+
+    entry.async_on_unload(entry.add_update_listener(options_listener))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True

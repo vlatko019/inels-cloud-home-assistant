@@ -10,7 +10,17 @@ from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import InelsCloudAuthError, InelsCloudClient, InelsCloudError
-from .const import CONF_ACCESS_TOKEN, CONF_PASSWORD, CONF_REFRESH_TOKEN, CONF_USERNAME, DOMAIN
+from .const import (
+    CONF_ACCESS_TOKEN,
+    CONF_PASSWORD,
+    CONF_REFRESH_TOKEN,
+    CONF_SHUTTER_DIRECTION,
+    CONF_USERNAME,
+    DEFAULT_SHUTTER_DIRECTION,
+    DOMAIN,
+    SHUTTER_DIRECTION_NORMAL,
+    SHUTTER_DIRECTION_REVERSED,
+)
 
 
 class InelsCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -37,9 +47,7 @@ class InelsCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except InelsCloudError:
                 errors["base"] = "cannot_connect"
             else:
-                await self.async_set_unique_id(
-                    user_input[CONF_USERNAME].lower()
-                )
+                await self.async_set_unique_id(user_input[CONF_USERNAME].lower())
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(
                     title=user_input[CONF_USERNAME],
@@ -111,4 +119,66 @@ class InelsCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         config_entry: config_entries.ConfigEntry,
     ) -> config_entries.OptionsFlow:
         """Return options flow."""
-        return config_entries.OptionsFlow()
+        return InelsCloudOptionsFlow()
+
+
+class InelsCloudOptionsFlow(config_entries.OptionsFlow):
+    """Handle iNELS Cloud integration options."""
+
+    def __init__(self) -> None:
+        self._shutters: list[tuple[str, str]] = []
+        self._directions: dict[str, str] = {}
+        self._index = 0
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Prepare the shutter options flow."""
+        coordinator = getattr(self.config_entry, "runtime_data", None)
+        devices = getattr(coordinator, "devices", {}) if coordinator else {}
+        self._shutters = [
+            (key, device["dev_name"])
+            for key, device in devices.items()
+            if device.get("dev_type") == 21 and not device.get("read_only", False)
+        ]
+        self._shutters.sort(key=lambda item: item[1].lower())
+        self._directions = dict(
+            self.config_entry.options.get(CONF_SHUTTER_DIRECTION, {})
+        )
+        self._index = 0
+
+        if not self._shutters:
+            return self.async_create_entry(title="", data=dict(self.config_entry.options))
+
+        return await self.async_step_shutter()
+
+    async def async_step_shutter(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Configure one shutter."""
+        key, name = self._shutters[self._index]
+        if user_input is not None:
+            self._directions[key] = user_input["direction"]
+            self._index += 1
+            if self._index >= len(self._shutters):
+                return self.async_create_entry(
+                    title="",
+                    data={CONF_SHUTTER_DIRECTION: self._directions},
+                )
+            return await self.async_step_shutter()
+
+        current = self._directions.get(key, DEFAULT_SHUTTER_DIRECTION)
+        return self.async_show_form(
+            step_id="shutter",
+            description_placeholders={"shutter_name": name},
+            data_schema=vol.Schema(
+                {
+                    vol.Required("direction", default=current): vol.In(
+                        {
+                            SHUTTER_DIRECTION_REVERSED: "Reversed",
+                            SHUTTER_DIRECTION_NORMAL: "Normal",
+                        }
+                    )
+                }
+            ),
+        )

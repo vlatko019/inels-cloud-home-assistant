@@ -16,6 +16,13 @@
           "username": "Email / username",
           "password": "Password"
         }
+      },
+      "shutter": {
+        "title": "Shutter direction",
+        "description": "Configure the direction for {shutter_name}. Reversed is the default and swaps Open/Close and the reported position.",
+        "data": {
+          "direction": "Direction"
+        }
       }
     },
     "error": {
