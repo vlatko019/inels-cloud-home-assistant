@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
@@ -12,7 +12,13 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DEV_TYPE_THERMOSTAT, DOMAIN
+from .const import (
+    CONF_SHUTTER_DIRECTION,
+    DEFAULT_SHUTTER_DIRECTION,
+    DEV_TYPE_SHUTTER,
+    DEV_TYPE_THERMOSTAT,
+    DOMAIN,
+)
 from .coordinator import InelsCloudCoordinator
 
 
@@ -26,14 +32,15 @@ async def async_setup_entry(
     entities: list[SensorEntity] = []
 
     for key, device in coordinator.devices.items():
-        if device.get("dev_type") != DEV_TYPE_THERMOSTAT:
-            continue
-        entities.extend(
-            [
-                InelsCloudTemperature(coordinator, key),
-                InelsCloudHumidity(coordinator, key),
-            ]
-        )
+        if device.get("dev_type") == DEV_TYPE_THERMOSTAT:
+            entities.extend(
+                [
+                    InelsCloudTemperature(coordinator, key),
+                    InelsCloudHumidity(coordinator, key),
+                ]
+            )
+        elif device.get("dev_type") == DEV_TYPE_SHUTTER:
+            entities.append(InelsCloudShutterPosition(coordinator, entry, key))
 
     async_add_entities(entities)
 
@@ -91,3 +98,35 @@ class InelsCloudHumidity(InelsCloudSensorBase):
     def native_value(self) -> int | None:
         value = self._state.get("humidity")
         return None if value is None else int(value)
+
+
+class InelsCloudShutterPosition(InelsCloudSensorBase):
+    """Logical shutter position sensor for history/statistics."""
+
+    _attr_name = "Position"
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(
+        self,
+        coordinator: InelsCloudCoordinator,
+        entry: ConfigEntry,
+        key: str,
+    ) -> None:
+        self._entry = entry
+        super().__init__(coordinator, key)
+        self._attr_unique_id = f"{DOMAIN}_{key.replace(':', '_')}_position"
+
+    @property
+    def _reversed(self) -> bool:
+        """Return whether this shutter uses reversed direction."""
+        directions = self._entry.options.get(CONF_SHUTTER_DIRECTION, {})
+        return directions.get(self._key, DEFAULT_SHUTTER_DIRECTION) == "reversed"
+
+    @property
+    def native_value(self) -> int | None:
+        value = self._state.get("os")
+        if value is None or value == 255:
+            return None
+        position = max(0, min(100, int(value)))
+        return 100 - position if self._reversed else position

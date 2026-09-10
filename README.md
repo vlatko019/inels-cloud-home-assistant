@@ -13,7 +13,8 @@ A custom Home Assistant integration for **iNELS Cloud / ELKO EP** installations.
 - Automatic access-token refresh and refresh-token rotation
 - Automatic device discovery
 - Cloud WebSocket state updates
-- Shutter/cover support (`dev_type: 21`)
+- Shutter/cover support (`dev_type: 21`) with per-device Normal/Reversed direction configuration (Reversed by default)
+- Shutter position percentage sensor for continuous History/statistics tracking
 - Temperature and humidity sensors (`dev_type: 30`)
 - Basic on/off switch support (`dev_type: 2`)
 
@@ -84,6 +85,8 @@ In particular:
 - `dev_type: 11` climate/thermostat support is not implemented yet.
 - Shutter stop-command mapping has not been confirmed.
 - Some iNELS devices report `255` for an unknown shutter position.
+- Shutter direction defaults to Reversed and can be configured per device in the integration options.
+- Each shutter also exposes a numeric `Position` sensor (0–100%) using the same logical direction as the cover; this is intended for History/statistics graphs.
 - Device discovery currently happens during setup; newly added devices require a reload/restart.
 - The exact command semantics for every ELANRF device type still need to be verified against the cloud service.
 - The integration currently assumes the observed iNELS Cloud endpoints remain available.
