@@ -8,9 +8,10 @@ from typing import Any
 from aiohttp import ClientSession
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .api import InelsCloudClient
+from .api import InelsCloudAuthError, InelsCloudClient
 from .const import (
     CONF_ACCESS_TOKEN,
     CONF_REFRESH_TOKEN,
@@ -60,13 +61,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Force authentication and initial discovery during setup.
     coordinator = InelsCloudCoordinator(hass, api, None)  # type: ignore[arg-type]
-    await coordinator.async_config_entry_first_refresh()
+
+    try:
+        await coordinator.async_config_entry_first_refresh()
+    except InelsCloudAuthError as err:
+        _LOGGER.warning(
+            "Authentication failed for iNELS Cloud config entry %s: %s",
+            entry.title,
+            err,
+        )
+        raise ConfigEntryAuthFailed(
+            "iNELS Cloud authentication expired. Please re-authenticate."
+        ) from err
 
     websocket = InelsCloudWebSocket(
         session,
         api.ensure_token,
         coordinator.handle_event,
     )
+
     coordinator.websocket = websocket
     await websocket.async_start()
 
@@ -88,4 +101,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload an iNELS Cloud config entry."""
     coordinator: InelsCloudCoordinator = entry.runtime_data
     await coordinator.websocket.async_stop()
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    return await hass.config_entries.async_unload_platforms(
+        entry,
+        PLATFORMS,
+    )
