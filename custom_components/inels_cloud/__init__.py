@@ -65,14 +65,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try:
         await coordinator.async_config_entry_first_refresh()
     except InelsCloudAuthError as err:
-        _LOGGER.warning(
-            "Authentication failed for iNELS Cloud config entry %s: %s",
-            entry.title,
-            err,
-        )
-        raise ConfigEntryAuthFailed(
-            "iNELS Cloud authentication expired. Please re-authenticate."
-        ) from err
+        _LOGGER.warning("Authentication failed for iNELS Cloud config entry %s: %s", entry.title, err)
+        raise ConfigEntryAuthFailed("iNELS Cloud authentication expired. Please re-authenticate.") from err
 
     websocket = InelsCloudWebSocket(
         session,
@@ -101,7 +95,4 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload an iNELS Cloud config entry."""
     coordinator: InelsCloudCoordinator = entry.runtime_data
     await coordinator.websocket.async_stop()
-    return await hass.config_entries.async_unload_platforms(
-        entry,
-        PLATFORMS,
-    )
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
