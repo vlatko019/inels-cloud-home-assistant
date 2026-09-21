@@ -70,13 +70,24 @@ class InelsCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
     async def async_step_reauth(
-        self, user_input: dict[str, Any] | None = None
+        self,
+        entry_data: dict[str, Any]
     ) -> config_entries.ConfigFlowResult:
         """Handle reauthentication."""
+
+        # Home Assistant calls this step automatically after
+        # ConfigEntryAuthFailed. Do not process credentials here.
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> config_entries.ConfigFlowResult:
+        """Handle reauthentication credentials."""
         errors: dict[str, str] = {}
         entry = self._get_reauth_entry()
 
-        if user_input:
+        if user_input is not None:
             session = async_get_clientsession(self.hass)
             try:
                 tokens = await InelsCloudClient.async_login(
@@ -91,8 +102,7 @@ class InelsCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 return self.async_update_reload_and_abort(
                     entry,
-                    data={
-                        **entry.data,
+                    data_updates={
                         CONF_USERNAME: user_input[CONF_USERNAME],
                         CONF_ACCESS_TOKEN: tokens["access_token"],
                         CONF_REFRESH_TOKEN: tokens["refresh_token"],
