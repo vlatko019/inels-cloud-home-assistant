@@ -22,7 +22,7 @@ class InelsCloudWebSocket:
         self,
         session: aiohttp.ClientSession,
         token_getter: Callable[[], Awaitable[str]],
-        event_callback: Callable[[dict[str, Any]], Awaitable[None]],
+        event_callback: Callable[[dict[str, Any]], Awaitable[None] | None],
     ) -> None:
         self._session = session
         self._token_getter = token_getter
@@ -72,7 +72,9 @@ class InelsCloudWebSocket:
                                 )
                                 continue
                             if isinstance(payload, dict):
-                                await self._event_callback(payload)
+                                result = self._event_callback(payload)
+                                if result is not None:
+                                    await result
                         elif message.type in (
                             aiohttp.WSMsgType.ERROR,
                             aiohttp.WSMsgType.CLOSED,

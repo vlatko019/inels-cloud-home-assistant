@@ -80,6 +80,22 @@ class InelsCloudCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         if not mac or not tech or uid is None:
             return
 
+        if isinstance(uid, bool) or isinstance(uid, (list, dict)):
+            _LOGGER.debug(
+                "Ignoring WebSocket event with invalid eui: %r",
+                uid,
+            )
+            return
+
+        try:
+            uid = int(uid)
+        except (TypeError, ValueError):
+            _LOGGER.debug(
+                "Ignoring WebSocket event with invalid eui: %r",
+                uid,
+            )
+            return
+
         key = self.device_key(mac, tech, int(uid))
         current = self.devices.get(key)
         if current is None:
