@@ -63,6 +63,16 @@ class InelsCloudCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         self.devices = parsed
         return parsed
 
+    async def async_send_command(self, **kwargs: Any) -> Any:
+        """Send a command and trigger coordinator auth handling on failure."""
+        try:
+            return await self.api.async_send_command(**kwargs)
+        except InelsCloudAuthError:
+            # A failed refresh during a service call must also trigger the
+            # coordinator's ConfigEntryAuthFailed path, not just log a command error.
+            await self.async_request_refresh()
+            raise
+
     @staticmethod
     def device_key(mac: str, tech: str, uid: int) -> str:
         """Build a stable device key."""
