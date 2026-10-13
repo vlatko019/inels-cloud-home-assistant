@@ -58,7 +58,7 @@ class InelsCloudSwitch(CoordinatorEntity[InelsCloudCoordinator], SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on."""
-        await self.coordinator.api.async_send_command(
+        await self.coordinator.async_send_command(
             mac=self._device["mac"],
             tech=self._device["tech"],
             dev_id=self._device["uid"],
@@ -69,7 +69,7 @@ class InelsCloudSwitch(CoordinatorEntity[InelsCloudCoordinator], SwitchEntity):
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off."""
-        await self.coordinator.api.async_send_command(
+        await self.coordinator.async_send_command(
             mac=self._device["mac"],
             tech=self._device["tech"],
             dev_id=self._device["uid"],
