@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "custom_components/inels_cloud/manifest.json"
 
 permissions:
   contents: write
