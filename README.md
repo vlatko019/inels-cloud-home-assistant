@@ -52,7 +52,7 @@ POST https://inels.cloud/v1/auth/login
 
 with the iNELS Cloud username, password, and `origin=elkoep`.
 
-The integration stores the access/refresh tokens in the Home Assistant config entry. The password is not stored.
+The integration stores the access/refresh tokens and the username/password in the Home Assistant config entry so it can recover automatically if a refresh token is rejected. Config-entry data is kept in Home Assistant's local storage; this integration does not encrypt it separately.
 
 Refresh tokens are rotated by iNELS Cloud. Every successful refresh therefore replaces the stored refresh token.
 
