@@ -53,6 +53,7 @@ class InelsCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     title=user_input[CONF_USERNAME],
                     data={
                         CONF_USERNAME: user_input[CONF_USERNAME],
+                        CONF_PASSWORD: user_input[CONF_PASSWORD],
                         CONF_ACCESS_TOKEN: tokens["access_token"],
                         CONF_REFRESH_TOKEN: tokens["refresh_token"],
                     },
@@ -104,6 +105,7 @@ class InelsCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     entry,
                     data_updates={
                         CONF_USERNAME: user_input[CONF_USERNAME],
+                        CONF_PASSWORD: user_input[CONF_PASSWORD],
                         CONF_ACCESS_TOKEN: tokens["access_token"],
                         CONF_REFRESH_TOKEN: tokens["refresh_token"],
                     },
