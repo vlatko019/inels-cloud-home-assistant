@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Connect to iNELS Cloud",
-        "description": "Enter your iNELS Cloud credentials. Your password is used only for authentication and is not stored by the integration.",
+        "description": "Enter your iNELS Cloud credentials. They are stored in the Home Assistant config entry so the integration can recover automatically if a refresh token is rejected.",
         "data": {
           "username": "Email / username",
           "password": "Password"
