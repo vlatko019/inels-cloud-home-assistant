@@ -87,7 +87,7 @@ class InelsCloudCover(CoordinatorEntity[InelsCloudCoordinator], CoverEntity):
         """Set shutter position."""
         position = max(0, min(100, int(kwargs[ATTR_POSITION])))
         api_position = 100 - position if self._reversed else position
-        await self.coordinator.api.async_send_command(
+        await self.coordinator.async_send_command(
             mac=self._device["mac"],
             tech=self._device["tech"],
             dev_id=self._device["uid"],

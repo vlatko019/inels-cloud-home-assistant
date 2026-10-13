@@ -14,7 +14,9 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import InelsCloudAuthError, InelsCloudClient
 from .const import (
     CONF_ACCESS_TOKEN,
+    CONF_PASSWORD,
     CONF_REFRESH_TOKEN,
+    CONF_USERNAME,
     PLATFORMS,
 )
 from .coordinator import InelsCloudCoordinator
@@ -56,6 +58,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         session,
         access_token=entry.data.get(CONF_ACCESS_TOKEN),
         refresh_token=entry.data.get(CONF_REFRESH_TOKEN),
+        username=entry.data.get(CONF_USERNAME),
+        password=entry.data.get(CONF_PASSWORD),
         token_update_callback=token_callback,
     )
 
