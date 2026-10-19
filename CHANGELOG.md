@@ -2,7 +2,10 @@
 
 All notable changes to this project are documented here.
 
-## [0.1.10-beta.1] - Pre-release
+## [0.1.10-beta.2] - Pre-release
+
+### Fixed
+- Correct opening/closing indicators after real-device testing showed that the cloud's `direction_down` flag was interpreted in reverse.
 
 ### Improved
 - Expose shutter opening/closing state from the cloud's motor status and direction fields.
