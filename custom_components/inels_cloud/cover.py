@@ -8,6 +8,7 @@ from homeassistant.components.cover import (
     ATTR_POSITION,
     CoverDeviceClass,
     CoverEntity,
+    CoverEntityFeature,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -40,6 +41,11 @@ class InelsCloudCover(CoordinatorEntity[InelsCloudCoordinator], CoverEntity):
 
     _attr_device_class = CoverDeviceClass.SHUTTER
     _attr_has_entity_name = True
+    _attr_supported_features = (
+        CoverEntityFeature.OPEN
+        | CoverEntityFeature.CLOSE
+        | CoverEntityFeature.SET_POSITION
+    )
 
     def __init__(
         self,
@@ -72,16 +78,49 @@ class InelsCloudCover(CoordinatorEntity[InelsCloudCoordinator], CoverEntity):
 
     @property
     def current_cover_position(self) -> int | None:
-        position = self._device.get("state", {}).get("os")
-        if position is None or position == 255:
+        """Return the logical position, or None when the device has no reading."""
+        raw_position = self._device.get("state", {}).get("os")
+        if raw_position is None:
             return None
-        position = max(0, min(100, int(position)))
+        try:
+            position = int(raw_position)
+        except (TypeError, ValueError):
+            return None
+        if position == 255:
+            return None
+        position = max(0, min(100, position))
         return 100 - position if self._reversed else position
 
+    @staticmethod
+    def _state_flag(value: Any) -> bool:
+        """Parse a cloud state flag without treating the string '0' as true."""
+        if isinstance(value, str):
+            return value.strip().lower() in {"1", "true", "on", "yes"}
+        return value is True or (isinstance(value, (int, float)) and value == 1)
+
     @property
-    def is_closed(self) -> bool:
+    def is_opening(self) -> bool:
+        """Return whether the motor is moving toward logical open."""
+        state = self._device.get("state", {})
+        if not self._state_flag(state.get("motor_on")):
+            return False
+        moving_down = self._state_flag(state.get("direction_down"))
+        return moving_down if self._reversed else not moving_down
+
+    @property
+    def is_closing(self) -> bool:
+        """Return whether the motor is moving toward logical closed."""
+        state = self._device.get("state", {})
+        if not self._state_flag(state.get("motor_on")):
+            return False
+        moving_down = self._state_flag(state.get("direction_down"))
+        return not moving_down if self._reversed else moving_down
+
+    @property
+    def is_closed(self) -> bool | None:
+        """Return closed only when the position is known."""
         position = self.current_cover_position
-        return position == 0 if position is not None else False
+        return position == 0 if position is not None else None
 
     async def async_set_cover_position(self, **kwargs: Any) -> None:
         """Set shutter position."""
