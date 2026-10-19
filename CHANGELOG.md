@@ -2,7 +2,14 @@
 
 All notable changes to this project are documented here.
 
-## [0.1.9] - Unreleased
+## [0.1.10] - Unreleased
+
+### Improved
+- Expose shutter opening/closing state from the cloud's motor status and direction fields.
+- Explicitly advertise supported cover actions to Home Assistant.
+- Handle missing or malformed shutter-position values safely and preserve an unknown state instead of reporting the shutter as open.
+
+## [0.1.9] - 2026-10-14
 
 ### Added
 - Add a GitHub Actions validation workflow for pull requests and pushes to `main`.
