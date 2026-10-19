@@ -116,7 +116,8 @@ class InelsCloudCover(CoordinatorEntity[InelsCloudCoordinator], CoverEntity):
         moving_down = self._state_flag(state.get("direction_down"))
         if moving_down is None:
             return None
-        return moving_down if self._reversed else not moving_down
+        # The cloud's direction_down flag maps opposite to the initial assumption.
+        return not moving_down if self._reversed else moving_down
 
     @property
     def is_closing(self) -> bool | None:
@@ -128,7 +129,7 @@ class InelsCloudCover(CoordinatorEntity[InelsCloudCoordinator], CoverEntity):
         moving_down = self._state_flag(state.get("direction_down"))
         if moving_down is None:
             return None
-        return not moving_down if self._reversed else moving_down
+        return moving_down if self._reversed else not moving_down
 
     @property
     def is_closed(self) -> bool | None:
