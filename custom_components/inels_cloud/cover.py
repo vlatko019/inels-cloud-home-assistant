@@ -92,28 +92,42 @@ class InelsCloudCover(CoordinatorEntity[InelsCloudCoordinator], CoverEntity):
         return 100 - position if self._reversed else position
 
     @staticmethod
-    def _state_flag(value: Any) -> bool:
-        """Parse a cloud state flag without treating the string '0' as true."""
+    def _state_flag(value: Any) -> bool | None:
+        """Parse a cloud state flag, preserving missing or unknown values."""
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float)):
+            return bool(value) if value in (0, 1) else None
         if isinstance(value, str):
-            return value.strip().lower() in {"1", "true", "on", "yes"}
-        return value is True or (isinstance(value, (int, float)) and value == 1)
+            normalized = value.strip().lower()
+            if normalized in {"1", "true", "on", "yes"}:
+                return True
+            if normalized in {"0", "false", "off", "no"}:
+                return False
+        return None
 
     @property
-    def is_opening(self) -> bool:
+    def is_opening(self) -> bool | None:
         """Return whether the motor is moving toward logical open."""
         state = self._device.get("state", {})
-        if not self._state_flag(state.get("motor_on")):
-            return False
+        motor_on = self._state_flag(state.get("motor_on"))
+        if motor_on is not True:
+            return motor_on
         moving_down = self._state_flag(state.get("direction_down"))
+        if moving_down is None:
+            return None
         return moving_down if self._reversed else not moving_down
 
     @property
-    def is_closing(self) -> bool:
+    def is_closing(self) -> bool | None:
         """Return whether the motor is moving toward logical closed."""
         state = self._device.get("state", {})
-        if not self._state_flag(state.get("motor_on")):
-            return False
+        motor_on = self._state_flag(state.get("motor_on"))
+        if motor_on is not True:
+            return motor_on
         moving_down = self._state_flag(state.get("direction_down"))
+        if moving_down is None:
+            return None
         return not moving_down if self._reversed else moving_down
 
     @property
