@@ -3,8 +3,7 @@ name: Release
 on:
   push:
     branches:
-      - main
-      - feat/shutter-operation-state
+      - "**"
 
 permissions:
   contents: write
@@ -33,7 +32,7 @@ jobs:
 
           # Publish stable releases only from main. A version containing a
           # prerelease suffix (for example 0.1.10-beta.1) may be published
-          # from the dedicated test branch.
+          # from any branch, so test releases don't require merging first.
           if [[ "$GITHUB_REF" == "refs/heads/main" || "$VERSION" == *-* ]]; then
             echo "publish=true" >> "$GITHUB_OUTPUT"
           else
