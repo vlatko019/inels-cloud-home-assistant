@@ -2,18 +2,18 @@
 
 All notable changes to this project are documented here.
 
-## [0.1.10-beta.2] - Pre-release
+## [0.2.0] - 2026-10-21
 
-### Fixed
-- Correct opening/closing indicators after real-device testing showed that the cloud's `direction_down` flag was interpreted in reverse.
+### Added
+- Report shutter opening and closing state from the cloud's motor status and direction fields.
+- Expose shutter movement indicators that respect each device's Normal/Reversed direction setting.
 
 ### Improved
-- Expose shutter opening/closing state from the cloud's motor status and direction fields.
-- Explicitly advertise supported cover actions to Home Assistant.
-- Handle missing or malformed shutter-position values safely and preserve an unknown state instead of reporting the shutter as open.
+- Explicitly advertise the cover actions currently supported by the integration: open, close, and set position.
+- Handle missing or malformed shutter-position and movement values safely, preserving unknown state rather than inventing a position or direction.
 
-### Testing
-- This pre-release is intended for testing shutter state reporting before the stable 0.1.10 release.
+### Notes
+- A dedicated shutter stop command is not included in this release because the iNELS Cloud command semantics have not yet been confirmed. Investigation and implementation are planned for the 0.2.x release line.
 
 ## [0.1.9] - 2026-10-14
 
