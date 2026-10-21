@@ -2,7 +2,20 @@
 
 All notable changes to this project are documented here.
 
-## [0.1.9] - Unreleased
+## [0.2.0] - 2026-10-21
+
+### Added
+- Report shutter opening and closing state from the cloud's motor status and direction fields.
+- Expose shutter movement indicators that respect each device's Normal/Reversed direction setting.
+
+### Improved
+- Explicitly advertise the cover actions currently supported by the integration: open, close, and set position.
+- Handle missing or malformed shutter-position and movement values safely, preserving unknown state rather than inventing a position or direction.
+
+### Notes
+- A dedicated shutter stop command is not included in this release because the iNELS Cloud command semantics have not yet been confirmed. Investigation and implementation are planned for the 0.2.x release line.
+
+## [0.1.9] - 2026-10-14
 
 ### Added
 - Add a GitHub Actions validation workflow for pull requests and pushes to `main`.

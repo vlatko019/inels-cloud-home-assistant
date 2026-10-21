@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     branches:
-      - main
+      - "**"
 
 permissions:
   contents: write
@@ -30,8 +30,19 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
 
+          # Publish stable releases only from main. A version containing a
+          # prerelease suffix (for example 0.1.10-beta.1) may be published
+          # from any branch, so test releases don't require merging first.
+          if [[ "$GITHUB_REF" == "refs/heads/main" || "$VERSION" == *-* ]]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping release: non-main branch has a stable version."
+          fi
+
       - name: Check whether tag already exists
         id: tag
+        if: steps.version.outputs.publish == 'true'
         env:
           TAG: ${{ steps.version.outputs.tag }}
         run: |
@@ -43,7 +54,7 @@ jobs:
           fi
 
       - name: Create and push version tag
-        if: steps.tag.outputs.exists == 'false'
+        if: steps.version.outputs.publish == 'true' && steps.tag.outputs.exists == 'false'
         env:
           TAG: ${{ steps.version.outputs.tag }}
           GH_TOKEN: ${{ github.token }}
@@ -52,11 +63,20 @@ jobs:
           git push origin "$TAG"
 
       - name: Create GitHub Release
-        if: steps.tag.outputs.exists == 'false'
+        if: steps.version.outputs.publish == 'true' && steps.tag.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          gh release create "$TAG" \
-            --title "$TAG" \
-            --generate-notes
+          if [[ "$VERSION" == *-* ]]; then
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --generate-notes \
+              --prerelease \
+              --latest=false
+          else
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --generate-notes
+          fi
